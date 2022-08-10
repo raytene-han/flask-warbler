@@ -128,7 +128,7 @@ def logout():
 
     if form.validate_on_submit():
         do_logout()
-        
+
         flash("Logout Successful")
         return redirect('/login')
 
@@ -166,13 +166,15 @@ def list_users():
 def show_user(user_id):
     """Show user profile."""
 
+    form = g.csrf_form
+
     if not g.user:
         flash("Access unauthorized.", "danger")
         return redirect("/")
 
     user = User.query.get_or_404(user_id)
 
-    return render_template('users/show.html', user=user)
+    return render_template('users/show.html', user=user, form=form)
 
 
 @app.get('/users/<int:user_id>/following')
@@ -329,7 +331,7 @@ def homepage():
     - anon users: no messages
     - logged in: 100 most recent messages of followed_users
     """
-    breakpoint()
+
     form = g.csrf_form
 
     if g.user:
