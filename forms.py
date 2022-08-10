@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, TextAreaField
-from wtforms.validators import DataRequired, Email, Length
+from wtforms.validators import DataRequired, Email, Length, URL
 
 
 class MessageForm(FlaskForm):
@@ -15,7 +15,7 @@ class UserAddForm(FlaskForm):
     username = StringField('Username', validators=[DataRequired()])
     email = StringField('E-mail', validators=[DataRequired(), Email()])
     password = PasswordField('Password', validators=[Length(min=6)])
-    image_url = StringField('(Optional) Image URL')
+    image_url = StringField('(Optional) Image URL', validators=[URL()])
 
 
 class LoginForm(FlaskForm):
@@ -26,3 +26,13 @@ class LoginForm(FlaskForm):
 
 class CSRFProtectForm(FlaskForm):
     """Form just for CSRF Protection"""
+
+class EditProfileForm(FlaskForm):
+    """Form for editing user profile."""
+
+    username = StringField('Username', validators=[DataRequired()])
+    email = StringField('E-mail', validators=[DataRequired(), Email()])
+    image_url = StringField('(Optional) Image URL')
+    header_image_url = StringField('(Optional) Image URL')
+    bio = StringField('(Optional) Bio')
+    password = PasswordField('Password', validators=[Length(min=6)])
