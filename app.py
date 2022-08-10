@@ -124,7 +124,7 @@ def login():
 def logout():
     """Handle logout of user and redirect to homepage."""
 
-    form = g.csrf_form
+    form = g.csrf_form # do not need to assign to form anymore
 
     if form.validate_on_submit():
         do_logout()

@@ -493,6 +493,15 @@ p.card-bio {
   background-color: #62676c;
 }
 
+.liked:active {
+  display: inline;
+}
+
+.unliked:active {
+  display: inline;
+}
+
+
 #messages.no-hover .message-area {
   width: 100%;
 }
