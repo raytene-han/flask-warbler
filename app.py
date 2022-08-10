@@ -5,7 +5,7 @@ from flask import Flask, render_template, request, flash, redirect, session, g
 from flask_debugtoolbar import DebugToolbarExtension
 from sqlalchemy.exc import IntegrityError
 
-from forms import UserAddForm, LoginForm, MessageForm
+from forms import UserAddForm, LoginForm, MessageForm, CSRFProtectForm
 from models import db, connect_db, User, Message
 
 load_dotenv()
@@ -18,7 +18,7 @@ app = Flask(__name__)
 # if not set there, use development local db.
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_DATABASE_URI'] = (
-    os.environ['DATABASE_URL'].replace("postgres://", "postgresql://"))
+    os.environ['DATABASE_URL'].replace("postgres://", "postgresql://warbler"))
 app.config['SQLALCHEMY_ECHO'] = False
 app.config['DEBUG_TB_INTERCEPT_REDIRECTS'] = True
 app.config['SECRET_KEY'] = os.environ['SECRET_KEY']
@@ -40,6 +40,11 @@ def add_user_to_g():
 
     else:
         g.user = None
+
+@app.before_request
+def add_csrf_form_to_all_pages():
+    """Before every route, add CSRF-only form to global object."""
+    g.csrf_form = CSRFProtectForm()
 
 
 def do_login(user):
@@ -66,6 +71,7 @@ def signup():
     If the there already is a user with that username: flash message
     and re-present form.
     """
+
 
     if CURR_USER_KEY in session:
         del session[CURR_USER_KEY]
@@ -120,6 +126,13 @@ def logout():
 
     form = g.csrf_form
 
+    if form.validate_on_submit():
+        do_logout()
+        
+        flash("Logout Successful")
+        return redirect('/login')
+
+
     # IMPLEMENT THIS AND FIX BUG
     # DO NOT CHANGE METHOD ON ROUTE
 
@@ -133,6 +146,7 @@ def list_users():
 
     Can take a 'q' param in querystring to search by that username.
     """
+    form = g.csrf_form
 
     if not g.user:
         flash("Access unauthorized.", "danger")
@@ -315,6 +329,8 @@ def homepage():
     - anon users: no messages
     - logged in: 100 most recent messages of followed_users
     """
+    breakpoint()
+    form = g.csrf_form
 
     if g.user:
         messages = (Message
@@ -323,10 +339,11 @@ def homepage():
                     .limit(100)
                     .all())
 
-        return render_template('home.html', messages=messages)
+        return render_template('home.html', messages=messages, form=form)
 
     else:
         return render_template('home-anon.html')
+
 
 
 ##############################################################################
