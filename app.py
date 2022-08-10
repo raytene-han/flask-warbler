@@ -146,8 +146,6 @@ def list_users():
 
     Can take a 'q' param in querystring to search by that username.
     """
-    form = g.csrf_form
-
     if not g.user:
         flash("Access unauthorized.", "danger")
         return redirect("/")
@@ -166,20 +164,19 @@ def list_users():
 def show_user(user_id):
     """Show user profile."""
 
-    form = g.csrf_form
-
     if not g.user:
         flash("Access unauthorized.", "danger")
         return redirect("/")
 
     user = User.query.get_or_404(user_id)
 
-    return render_template('users/show.html', user=user, form=form)
+    return render_template('users/show.html', user=user)
 
 
 @app.get('/users/<int:user_id>/following')
 def show_following(user_id):
     """Show list of people this user is following."""
+
 
     if not g.user:
         flash("Access unauthorized.", "danger")
@@ -332,8 +329,6 @@ def homepage():
     - logged in: 100 most recent messages of followed_users
     """
 
-    form = g.csrf_form
-
     if g.user:
         messages = (Message
                     .query
@@ -341,7 +336,7 @@ def homepage():
                     .limit(100)
                     .all())
 
-        return render_template('home.html', messages=messages, form=form)
+        return render_template('home.html', messages=messages)
 
     else:
         return render_template('home-anon.html')
