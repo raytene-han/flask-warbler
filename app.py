@@ -356,26 +356,22 @@ def like_message(message_id):
         flash("Access unauthorized.", "danger")
         return redirect("/")
 
-    like = Like.query.get((g.user.id, message_id))
+    message = Message.query.get(message_id)
 
     form = g.csrf_form
 
     if form.validate_on_submit():
 
-        if like:
-            # breakpoint()
-            # like.query.delete()
-            db.session.delete(like)
+        if message in g.user.liked_messages:
+            g.user.liked_messages.remove(message) # use append/remove
         else:
-            like = Like(user_id=g.user.id,
-                        message_id=message_id)
-
-            db.session.add(like)
+            g.user.liked_messages.append(message)
 
         db.session.commit()
 
         flash('Liked/unliked successfully!')
-        return redirect(f'/messages/{message_id}')
+        return redirect(f'/messages/{message_id}') # request.referer
+        # refer header
 
     else:
         return redirect(f'/messages/{message_id}')

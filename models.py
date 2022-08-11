@@ -86,7 +86,7 @@ class User(db.Model):
         backref="following",
     )
 
-    liked_messages = db.relationship("Like", backref="user")
+    liked_messages = db.relationship("Message", secondary="likes", backref="users_liked")
 
     def __repr__(self):
         return f"<User #{self.id}: {self.username}, {self.email}>"
@@ -172,8 +172,6 @@ class Message(db.Model):
         db.ForeignKey('users.id', ondelete='CASCADE'),
         nullable=False,
     )
-
-    like_count = db.relationship("Like", backref="message")
 
 
 class Like(db.Model):
