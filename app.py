@@ -6,7 +6,7 @@ from flask_debugtoolbar import DebugToolbarExtension
 from sqlalchemy.exc import IntegrityError
 
 from forms import UserAddForm, LoginForm, MessageForm, CSRFProtectForm, EditProfileForm
-from models import db, connect_db, User, Message
+from models import db, connect_db, User, Message, Like
 
 load_dotenv()
 
@@ -20,7 +20,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_DATABASE_URI'] = (
     os.environ['DATABASE_URL'].replace("postgres://", "postgresql://warbler"))
 app.config['SQLALCHEMY_ECHO'] = False
-app.config['DEBUG_TB_INTERCEPT_REDIRECTS'] = True
+app.config['DEBUG_TB_INTERCEPT_REDIRECTS'] = False
 app.config['SECRET_KEY'] = os.environ['SECRET_KEY']
 toolbar = DebugToolbarExtension(app)
 
@@ -323,8 +323,11 @@ def show_message(message_id):
         flash("Access unauthorized.", "danger")
         return redirect("/")
 
+    form = g.csrf_form #
     msg = Message.query.get_or_404(message_id)
-    return render_template('messages/show.html', message=msg)
+    like = Like.query.get((g.user.id, message_id))
+    return render_template('messages/show.html', message=msg,
+                            like=like, form=form)
 
 
 @app.post('/messages/<int:message_id>/delete')
@@ -344,6 +347,38 @@ def delete_message(message_id):
     db.session.commit()
 
     return redirect(f"/users/{g.user.id}")
+
+@app.post('/messages/<int:message_id>/likes')
+def like_message(message_id):
+    """Likes or unlikes a message."""
+
+    if not g.user:
+        flash("Access unauthorized.", "danger")
+        return redirect("/")
+
+    like = Like.query.get((g.user.id, message_id))
+
+    form = g.csrf_form
+
+    if form.validate_on_submit():
+
+        if like:
+            # breakpoint()
+            # like.query.delete()
+            db.session.delete(like)
+        else:
+            like = Like(user_id=g.user.id,
+                        message_id=message_id)
+
+            db.session.add(like)
+
+        db.session.commit()
+
+        flash('Liked/unliked successfully!')
+        return redirect(f'/messages/{message_id}')
+
+    else:
+        return redirect(f'/messages/{message_id}')
 
 
 ##############################################################################

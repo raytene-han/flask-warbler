@@ -42,9 +42,14 @@
             {% endif %}
           </div>
           <p class="single-message">
-            <form method="POST" action="">
+            <form method="POST" action="/messages/{{ message.id }}/likes">
+              {{form.hidden_tag()}}
               <button>
-                <i class="bi bi-star"><i>
+                {% if like %}
+                <i class="bi bi-star-fill"></i>
+                {% else %}
+                <i class="bi bi-star"></i>
+                {% endif %}
               </button>
           </form>
           {{ message.text }}

@@ -30,6 +30,7 @@ db.create_all()
 
 class UserModelTestCase(TestCase):
     def setUp(self):
+        """Set up two users."""
         User.query.delete()
 
         u1 = User.signup("u1", "u1@email.com", "password", None)
@@ -45,8 +46,30 @@ class UserModelTestCase(TestCase):
         db.session.rollback()
 
     def test_user_model(self):
+        """Check new user model has no messages and no followers."""
         u1 = User.query.get(self.u1_id)
 
         # User should have no messages & no followers
         self.assertEqual(len(u1.messages), 0)
         self.assertEqual(len(u1.followers), 0)
+
+    def test_repr(self):
+        """Test repr method works as expected.
+        use assertEqual for repr output
+        """
+
+    def test_is_following(self):
+        """CONDITION 1: Test user1 is following user2.
+        check user1.following includes user2
+
+        CONDITION 2: Test user1 is not following user2.
+        check user1.following does not include user2
+        """
+
+    def test_is_followed_by(self):
+        """CONDITION 1: Test user1 is followed by user2.
+        check user1.followers includes user2
+
+        CONDITION 2: Test user1 is not followed by user2.
+        check user1.followers does not include user2
+        """
