@@ -8,6 +8,7 @@
 import os
 from unittest import TestCase
 
+from flask import g, session
 from models import db, User, Message, Follows
 
 # BEFORE we import our app, let's set an environmental variable
@@ -45,6 +46,20 @@ class UserModelTestCase(TestCase):
     def tearDown(self):
         db.session.rollback()
 
+    def test_user_signup(self):
+        """Test that signing up creates a new user."""
+
+        users = User.query.all()
+        u1 = User.query.get(self.u1_id)
+
+        self.assertEqual(u1.email, "u1@email.com")
+        self.assertEqual(len(users), 2)
+
+        # CONDITION 2: Check user signup fails
+
+        u3 = User.signup("u3", "u3", "password", None)
+        self.assertEqual(len(users), 2)
+
     def test_user_model(self):
         """Check new user model has no messages and no followers."""
         u1 = User.query.get(self.u1_id)
@@ -58,13 +73,35 @@ class UserModelTestCase(TestCase):
         use assertEqual for repr output
         """
 
-    def test_is_following(self):
+    def test_start_following(self):
         """CONDITION 1: Test user1 is following user2.
         check user1.following includes user2
 
         CONDITION 2: Test user1 is not following user2.
         check user1.following does not include user2
         """
+        # CONDITION 1
+        u1 = User.query.get(self.u1_id)
+        u2 = User.query.get(self.u2_id)
+        with self.client.session_transaction() as change_session:
+            change_session['curr_user'] = u1.username
+
+        resp = self.client.post(f'/users/follow/{u2.id}')
+        html = resp.html
+
+        self.assertEqual(len(u1.following), 1)
+        self.assertIn(u2.username, html)
+
+        # CONDITION 2
+
+        resp = self.client.post(f'/users/stop-following/{u2.id}')
+        html = resp.html
+
+        self.assertEqual(len(u1.following), 0)
+        self.assertNotIn(u2.username, html)
+
+
+
 
     def test_is_followed_by(self):
         """CONDITION 1: Test user1 is followed by user2.
@@ -73,3 +110,4 @@ class UserModelTestCase(TestCase):
         CONDITION 2: Test user1 is not followed by user2.
         check user1.followers does not include user2
         """
+
