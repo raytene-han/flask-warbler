@@ -517,6 +517,11 @@ p.card-bio {
   min-width: 105px;
 }
 
+.like-button {
+  position: relative;
+  z-index: 99;
+}
+
 .messages-like {
   position: absolute;
   top: 4px;

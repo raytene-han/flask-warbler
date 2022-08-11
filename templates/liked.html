@@ -44,6 +44,8 @@
       </div>
     </aside>
 
+    <h3>Liked Messages</h3>
+
     <div class="col-lg-6 col-md-8 col-sm-12">
       <ul class="list-group" id="messages">
         {% for msg in messages %}
@@ -60,11 +62,7 @@
               <form method="POST" action="/messages/{{ msg.id }}/likes" class="like-button">
                 {{g.csrf_form.hidden_tag()}}
                 <button>
-                  {% if msg in like_messages %}
                   <i class="bi bi-star-fill"></i>
-                  {% else %}
-                  <i class="bi bi-star"></i>
-                  {% endif %}
                 </button>
               </form>
             </div>

@@ -1,4 +1,4 @@
-import os
+import os, requests
 from dotenv import load_dotenv
 
 from flask import Flask, render_template, request, flash, redirect, session, g
@@ -270,6 +270,27 @@ def profile():
         return render_template('users/edit.html', form=form)
 
 
+@app.get('/users/<int:user_id>/liked-messages')
+def show_liked_messages(user_id):
+    """Show liked messages: """
+
+    if g.user:
+
+        user = User.query.get(user_id)
+        liked_messages = [ message.id for message in user.liked_messages]
+        messages = (Message
+                    .query
+                    .filter(Message.id.in_(liked_messages))
+                    .order_by(Message.timestamp.desc())
+                    .limit(100)
+                    .all())
+
+        return render_template('liked.html', messages=messages)
+
+    else:
+        return render_template('liked.html')
+
+
 @app.post('/users/delete')
 def delete_user():
     """Delete user.
@@ -361,20 +382,26 @@ def like_message(message_id):
     form = g.csrf_form
 
     if form.validate_on_submit():
+        requested = request.referrer
+
+        if not request.referrer:
+            requested = '/'
+
 
         if message in g.user.liked_messages:
             g.user.liked_messages.remove(message) # use append/remove
-        else:
+        elif message.user_id != g.user.id:
             g.user.liked_messages.append(message)
 
-        db.session.commit()
 
+        db.session.commit()
         flash('Liked/unliked successfully!')
-        return redirect(f'/messages/{message_id}') # request.referer
+
+        return redirect(requested) # request.referer
         # refer header
 
     else:
-        return redirect(f'/messages/{message_id}')
+        return redirect(requested)
 
 
 ##############################################################################
@@ -398,8 +425,10 @@ def homepage():
                     .order_by(Message.timestamp.desc())
                     .limit(100)
                     .all())
+        like_messages = g.user.liked_messages
 
-        return render_template('home.html', messages=messages)
+        return render_template('home.html', messages=messages,
+                                like_messages=like_messages)
 
     else:
         return render_template('home-anon.html')
