@@ -73,7 +73,11 @@ class UserModelTestCase(TestCase):
         use assertEqual for repr output
         """
 
-    def test_start_following(self):
+        u1 = User.query.get(self.u1_id)
+        self.assertIn( "u1, u1@email.com", str(u1))
+
+
+    def test_is_following(self):
         """CONDITION 1: Test user1 is following user2.
         check user1.following includes user2
 
@@ -81,21 +85,26 @@ class UserModelTestCase(TestCase):
         check user1.following does not include user2
         """
         # CONDITION 1
+
+        with self.client.session_transaction() as sess:
+            sess['curr_user'] = self.u1_id
+
+        resp = self.client.post(f'/users/follow/{self.u2_id}', follow_redirects=True)
+        html = resp.get_data(as_text=True)
+
         u1 = User.query.get(self.u1_id)
         u2 = User.query.get(self.u2_id)
-        with self.client.session_transaction() as change_session:
-            change_session['curr_user'] = u1.username
-
-        resp = self.client.post(f'/users/follow/{u2.id}')
-        html = resp.html
 
         self.assertEqual(len(u1.following), 1)
         self.assertIn(u2.username, html)
 
         # CONDITION 2
 
-        resp = self.client.post(f'/users/stop-following/{u2.id}')
-        html = resp.html
+        resp = self.client.post(f'/users/stop-following/{self.u2_id}')
+        html = resp.get_data(as_text=True)
+
+        u1 = User.query.get(self.u1_id)
+        u2 = User.query.get(self.u2_id)
 
         self.assertEqual(len(u1.following), 0)
         self.assertNotIn(u2.username, html)
@@ -110,4 +119,30 @@ class UserModelTestCase(TestCase):
         CONDITION 2: Test user1 is not followed by user2.
         check user1.followers does not include user2
         """
+
+        #CONDITION 1
+
+        with self.client.session_transaction() as sess:
+            sess['curr_user'] = self.u2_id
+
+        resp = self.client.post(f'/users/follow/{self.u1_id}', follow_redirects=True)
+        html = resp.get_data(as_text=True)
+
+        u1 = User.query.get(self.u1_id)
+        u2 = User.query.get(self.u2_id)
+
+        self.assertEqual(len(u1.followers), 1)
+        self.assertIn(u1.username, html)
+
+        # CONDITION 2
+
+        resp = self.client.post(f'/users/stop-following/{self.u1_id}')
+        html = resp.get_data(as_text=True)
+
+        u1 = User.query.get(self.u1_id)
+        u2 = User.query.get(self.u2_id)
+
+        self.assertEqual(len(u1.followers), 0)
+        self.assertNotIn(u1.username, html)
+
 
