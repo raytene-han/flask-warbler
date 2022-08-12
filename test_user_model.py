@@ -10,6 +10,7 @@ from unittest import TestCase
 
 from flask import g, session
 from models import db, User, Message, Follows
+from sqlalchemy.exc import IntegrityError
 
 # BEFORE we import our app, let's set an environmental variable
 # to use a different database for tests (we need to do this
@@ -57,8 +58,22 @@ class UserModelTestCase(TestCase):
 
         # CONDITION 2: Check user signup fails
 
-        u3 = User.signup("u3", "u3", "password", None)
-        self.assertEqual(len(users), 2)
+    def test_email_requirement(self):
+        """Test that signup fails without a required field"""
+
+        with self.assertRaises(IntegrityError):
+            u3 = User.signup("u3", None ,"password", None)
+            db.session.commit()
+
+        #CONDITZION 3: Check duplicate usernames cannot be created
+
+    def test_duplicate_username_prompts_error(self):
+        """Test that an account cannot be created with a dupelicate username"""
+
+        with self.assertRaises(IntegrityError):
+            u3 = User.signup("u2", "u3@email.com", "password", None)
+            db.session.commit()
+
 
     def test_user_authenticate(self):
         """Test User.authenticate returns the use when given a valid username
@@ -97,40 +112,45 @@ class UserModelTestCase(TestCase):
 
 
     def test_is_following(self):
-        """CONDITION 1: Test user1 is not following user2.
-        check user1.following does not include user2
-        CONDITION 2: Test user1 is following user2.
+        """ Test user1 is following user2.
         check user1.following includes user2
-
         """
-        # CONDITION 1
+
+
+        u1 = User.query.get(self.u1_id)
+        u2 = User.query.get(self.u2_id)
+
+        u1.following.append(u2)
+
+        self.assertEqual(u1.is_following(u2),True)
+
+
+    def test_is_not_following(self):
+        """Test user1 is not following user2.
+        check user1.following does not include user2"""
 
         u1 = User.query.get(self.u1_id)
         u2 = User.query.get(self.u2_id)
 
         self.assertEqual(u1.is_following(u2), False)
-        u1.following.append(u2)
-
-        # CONDITION 2
-        self.assertEqual(u1.is_following(u2), True)
 
 
     def test_is_followed_by(self):
-        """CONDITION 1: Test user1 is not followed by user2.
-        check user1.followers does not include user2
+        """Test user1 is not followed by user2.
+        check user1.followers does not include user2"""
 
-        CONDITION 2: Test user1 is followed by user2.
-        check user1.followers includes user2
-        """
-        # CONDITION 1
+        u1 = User.query.get(self.u1_id)
+        u2 = User.query.get(self.u2_id)
+
+        u1.followers.append(u2)
+        self.assertEqual(u1.is_followed_by(u2), True)
+
+    def test_is_not_followed_by(self):
+        """Test user1 is followed by user2.
+        check user1.followers includes user2"""
 
         u1 = User.query.get(self.u1_id)
         u2 = User.query.get(self.u2_id)
 
         self.assertEqual(u1.is_followed_by(u2), False)
-
-        # CONDITION 2
-
-        u1.followers.append(u2)
-        self.assertEqual(u1.is_followed_by(u2), True)
 

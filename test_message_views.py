@@ -54,11 +54,11 @@ class MessageBaseViewTestCase(TestCase):
 
 class MessageAddViewTestCase(MessageBaseViewTestCase):
     """Test that a user can add a message when logged in and when logged out."""
-    def test_add_message(self):
+    def test_add_message_when_logged_in(self):
         # Since we need to change the session to mimic logging in,
         # we need to use the changing-session trick:
 
-        # CONDITION 1: logged in user
+
         with self.client as c:
             with c.session_transaction() as sess:
                 sess[CURR_USER_KEY] = self.u1_id
@@ -71,24 +71,22 @@ class MessageAddViewTestCase(MessageBaseViewTestCase):
             self.assertEqual(resp.status_code, 302)
             self.assertEqual(len(message.text), 5)
 
-            # CONDITION 2: logged out user
-            c.post('/logout')
-            resp = c.post("/messages/new", data={"text": "Hello"},
+    def test_add_message_when_logged_out(self):
+        """ Test that a user cannot add a message when logged out."""
+
+        resp = self.client.post("/messages/new", data={"text": "Hello"},
                           follow_redirects=True)
 
-            html = resp.get_data(as_text=True)
-            self.assertEqual(resp.status_code, 200)
-            self.assertIn("Access unauthorized", html)
-
-
+        html = resp.get_data(as_text=True)
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn("Access unauthorized", html)
 
 
 class MessageDeleteViewTestCase(MessageBaseViewTestCase):
-    """Test that a user can delete a message"""
-    def test_delete_message(self):
+    """Test that a user can delete a message when logged in"""
+    def test_delete_message_when_logged_in(self):
         # Since we need to change the session to mimic logging in,
         # we need to use the changing-session trick:
-        # CONDITION 1: logged in user
         with self.client as c:
             with c.session_transaction() as sess:
                 sess[CURR_USER_KEY] = self.u1_id
@@ -105,11 +103,12 @@ class MessageDeleteViewTestCase(MessageBaseViewTestCase):
             self.assertEqual(resp.status_code, 302)
             self.assertEqual(len(message), 1)
 
-            # CONDITION 2: logged out user
-            c.post('/logout')
-            resp = c.post(f"/messages/{self.m1_id}/delete",
+    def test_delete_message_when_logged_out(self):
+        """Test that a user can delete a message when logged out"""
+
+        resp = self.client.post(f"/messages/{self.m1_id}/delete",
                           follow_redirects=True)
 
-            html = resp.get_data(as_text=True)
-            self.assertEqual(resp.status_code, 200)
-            self.assertIn("Access unauthorized", html)
+        html = resp.get_data(as_text=True)
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn("Access unauthorized", html)

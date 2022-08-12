@@ -68,3 +68,4 @@ class MessageModelTestCase(TestCase):
         self.assertEqual(len(u1.messages),1)
         self.assertEqual(len(u2.messages),1)
 
+

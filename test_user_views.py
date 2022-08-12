@@ -123,13 +123,9 @@ class UserModelTestCase(TestCase):
         self.assertEqual(len(u1.followers), 0)
         self.assertNotIn(u1.username, html)
 
-    def test_see_follower_pages(self):
+    def test_see_follower_pages_logged_in(self):
         """CONDITION 1: Test if you can see follower/following pages for any
-        user when logged in.
-
-        CONDITION 2: Test if you are disauthorized if logged out."""
-
-        # CONDITION 1
+        user when logged in."""
 
         with self.client.session_transaction() as sess:
             sess[CURR_USER_KEY] = self.u1_id
@@ -142,9 +138,9 @@ class UserModelTestCase(TestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertIn(u2.username, html)
 
-        # CONDITION 2
-
-        self.client.post('/logout')
+    def test_sewe_follower_pages_logged_out(self):
+        """  Test if you can see follower/following pages for any
+        user when logged out. """
 
         resp = self.client.get(f"/users/{self.u2_id}/following",
                                follow_redirects=True)
