@@ -1,7 +1,15 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, TextAreaField
+from wtforms import StringField, PasswordField, TextAreaField, SelectField
 from wtforms.validators import DataRequired, Email, Length, URL, Optional
+from wtforms_alchemy import model_form_factory
+from models import db, DirectMessage
 
+BaseModelForm = model_form_factory(FlaskForm)
+
+class ModelForm(BaseModelForm):
+    @classmethod
+    def get_session(self):
+        return db.session
 
 class MessageForm(FlaskForm):
     """Form for adding/editing messages."""
@@ -36,3 +44,10 @@ class EditProfileForm(FlaskForm):
     header_image_url = StringField('(Optional) Image URL')
     bio = StringField('(Optional) Bio')
     password = PasswordField('Password', validators=[Length(min=6)])
+
+class DirectMessageForm(ModelForm):
+    class Meta:
+        model = DirectMessage
+        include = ['user_id_to']
+
+    user_id_to = SelectField(validators=[DataRequired()])

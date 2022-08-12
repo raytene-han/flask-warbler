@@ -66,11 +66,10 @@ class UserModelTestCase(TestCase):
         html = resp.get_data(as_text=True)
 
         u1 = User.query.get(self.u1_id)
-        u2 = User.query.get(self.u2_id)
 
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(len(u1.following), 1)
-        self.assertIn(u2.username, html)
+        self.assertIn("username2", html)
 
         # CONDITION 2
 
@@ -79,11 +78,10 @@ class UserModelTestCase(TestCase):
         html = resp.get_data(as_text=True)
 
         u1 = User.query.get(self.u1_id)
-        u2 = User.query.get(self.u2_id)
 
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(len(u1.following), 0)
-        self.assertNotIn(u2.username, html)
+        self.assertNotIn("username2", html)
 
 
 
@@ -133,10 +131,8 @@ class UserModelTestCase(TestCase):
         resp = self.client.get(f"/users/{self.u2_id}/following")
         html = resp.get_data(as_text=True)
 
-        u2 = User.query.get(self.u2_id)
-
         self.assertEqual(resp.status_code, 200)
-        self.assertIn(u2.username, html)
+        self.assertIn("username2", html)
 
     def test_sewe_follower_pages_logged_out(self):
         """  Test if you can see follower/following pages for any

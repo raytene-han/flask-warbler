@@ -31,11 +31,12 @@ class MessageModelTestCase(TestCase):
     def setUp(self):
         """Set up two messages."""
         Message.query.delete()
+        User.query.delete()
 
         u1 = User.signup("u1", "u1@email.com", "password", None)
         u2 = User.signup("u2", "u2@email.com", "password", None)
 
-
+        db.session.add_all([u1, u2])
         db.session.commit()
         self.u1_id = u1.id
         self.u2_id = u2.id
@@ -43,6 +44,7 @@ class MessageModelTestCase(TestCase):
         m1 = Message(text="test_message", user_id=self.u1_id)
         m2 = Message(text="test_message2", user_id=self.u2_id)
 
+        db.session.add_all([m1, m2])
         db.session.commit()
         self.m1_id = m1.id
         self.m2_id = m2.id
@@ -56,8 +58,8 @@ class MessageModelTestCase(TestCase):
         """Test that messages are successfully created."""
 
         messages = Message.query.all()
-
         self.assertEqual(len(messages), 2)
+        # check message has certain things
 
     def test_user_message_relationship(self):
         """Test that user messages can be accessed through relationship."""
@@ -67,5 +69,7 @@ class MessageModelTestCase(TestCase):
 
         self.assertEqual(len(u1.messages),1)
         self.assertEqual(len(u2.messages),1)
+
+    # check number of likes
 
 

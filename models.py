@@ -29,6 +29,44 @@ class Follows(db.Model):
         primary_key=True,
     )
 
+class DirectMessage(db.Model):
+    """Connection of a direct message to the user it is sent from and sent to."""
+
+    __tablename__ = 'directmessages'
+
+    id = db.Column(
+        db.Integer,
+        primary_key=True,
+    )
+
+    subject = db.Column(
+        db.String(20),
+        nullable=False,
+    )
+
+    text = db.Column(
+        db.Text,
+        nullable=False,
+    )
+
+    timestamp = db.Column(
+        db.DateTime,
+        nullable=False,
+        default=datetime.utcnow,
+    )
+
+    user_id_from = db.Column(
+        db.Integer,
+        db.ForeignKey('users.id', ondelete="cascade"),
+        nullable=False,
+    )
+
+    user_id_to = db.Column(
+        db.Integer,
+        db.ForeignKey('users.id', ondelete="cascade"),
+        nullable=False,
+    )
+
 
 class User(db.Model):
     """User in the system."""
@@ -84,6 +122,14 @@ class User(db.Model):
         primaryjoin=(Follows.user_being_followed_id == id),
         secondaryjoin=(Follows.user_following_id == id),
         backref="following",
+    )
+
+    sent_to = db.relationship(
+        "User",
+        secondary="directmessages",
+        primaryjoin=(DirectMessage.user_id_to == id),
+        secondaryjoin=(DirectMessage.user_id_from == id),
+        backref="sent_from",
     )
 
     liked_messages = db.relationship("Message", secondary="likes", backref="users_liked")

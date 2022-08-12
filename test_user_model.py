@@ -50,13 +50,14 @@ class UserModelTestCase(TestCase):
     def test_user_signup(self):
         """Test that signing up creates a new user."""
 
-        users = User.query.all()
+        # users = User.query.all()
         u1 = User.query.get(self.u1_id)
 
         self.assertEqual(u1.email, "u1@email.com")
-        self.assertEqual(len(users), 2)
-
-        # CONDITION 2: Check user signup fails
+        # self.assertEqual(len(users), 2)
+        # check password != u1.password
+        self.assertNotEqual(u1.password, "password")
+        self.assertStartsWith("$2b$12", u1.password)
 
     def test_email_requirement(self):
         """Test that signup fails without a required field"""
@@ -75,19 +76,23 @@ class UserModelTestCase(TestCase):
             db.session.commit()
 
 
-    def test_user_authenticate(self):
+    def test_user_authenticate_valid(self):
         """Test User.authenticate returns the use when given a valid username
         and password, or fails when username/password is invalid."""
 
         # CONDITION 1: valid credentials
-
+        # query the user object based on id, and check username/password matches
         user = User.authenticate("u1", "password")
         self.assertIsInstance(user, User)
 
-        # CONDITION 2: invalid username
 
+    def test_user_authenticate_bad_username(self):
+        """Test User.authenticate fails when username is invalid."""
         user = User.authenticate("cat", "password")
         self.assertEqual(user, False)
+
+    def test_user_authenticate_bad_password(self):
+        """Test User.authenticate fails when password is invalid."""
 
         # CONDITION 3: invalid password
         user = User.authenticate("u1", "password1")
@@ -144,6 +149,8 @@ class UserModelTestCase(TestCase):
 
         u1.followers.append(u2)
         self.assertEqual(u1.is_followed_by(u2), True)
+        self.assertEqual(u1.followers, [u2])
+        # test to show entire list of followers/following
 
     def test_is_not_followed_by(self):
         """Test user1 is followed by user2.

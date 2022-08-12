@@ -5,8 +5,8 @@ from flask import Flask, render_template, request, flash, redirect, session, g
 from flask_debugtoolbar import DebugToolbarExtension
 from sqlalchemy.exc import IntegrityError
 
-from forms import UserAddForm, LoginForm, MessageForm, CSRFProtectForm, EditProfileForm
-from models import db, connect_db, User, Message, Like
+from forms import UserAddForm, LoginForm, MessageForm, CSRFProtectForm, EditProfileForm, DirectMessageForm
+from models import db, connect_db, User, Message, Like, DirectMessage
 
 load_dotenv()
 
@@ -403,6 +403,43 @@ def like_message(message_id):
     else:
         return redirect(requested)
 
+@app.get('/direct-messages')
+def show_direct_messages():
+    """Show all direct messages."""
+
+    if not g.user:
+        flash("Access unauthorized.", "danger")
+        return redirect("/")
+
+    msgs = (DirectMessage.query
+                        .filter(DirectMessage.user_id_to == g.user.id)
+                        .limit(20)
+                        .all())
+
+    return render_template('messages/directmessages.html', msgs=msgs)
+
+@app.route('/direct-messages/new', methods=["GET", "POST"])
+def add_direct_message():
+    """Add a direct message:
+
+    Show form if GET. If valid, update message and redirect to user page.
+    """
+
+    if not g.user:
+        flash("Access unauthorized.", "danger")
+        return redirect("/")
+
+    form = DirectMessageForm()
+    form.user_id_to.choices = [(user.id, user.username) for user in g.user.following]
+
+    if form.validate_on_submit():
+        msg = Message(text=form.text.data)
+        g.user.messages.append(msg)
+        db.session.commit()
+
+        return redirect(f"/users/{g.user.id}")
+
+    return render_template('messages/createdm.html', form=form)
 
 ##############################################################################
 # Homepage and error pages
