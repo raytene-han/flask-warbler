@@ -60,6 +60,25 @@ class UserModelTestCase(TestCase):
         u3 = User.signup("u3", "u3", "password", None)
         self.assertEqual(len(users), 2)
 
+    def test_user_authenticate(self):
+        """Test User.authenticate returns the use when given a valid username
+        and password, or fails when username/password is invalid."""
+
+        # CONDITION 1: valid credentials
+
+        user = User.authenticate("u1", "password")
+        self.assertIsInstance(user, User)
+
+        # CONDITION 2: invalid username
+
+        user = User.authenticate("cat", "password")
+        self.assertEqual(user, False)
+
+        # CONDITION 3: invalid password
+        user = User.authenticate("u1", "password1")
+        self.assertEqual(user, False)
+
+
     def test_user_model(self):
         """Check new user model has no messages and no followers."""
         u1 = User.query.get(self.u1_id)
@@ -78,71 +97,40 @@ class UserModelTestCase(TestCase):
 
 
     def test_is_following(self):
-        """CONDITION 1: Test user1 is following user2.
+        """CONDITION 1: Test user1 is not following user2.
+        check user1.following does not include user2
+        CONDITION 2: Test user1 is following user2.
         check user1.following includes user2
 
-        CONDITION 2: Test user1 is not following user2.
-        check user1.following does not include user2
         """
         # CONDITION 1
 
-        with self.client.session_transaction() as sess:
-            sess['curr_user'] = self.u1_id
-
-        resp = self.client.post(f'/users/follow/{self.u2_id}', follow_redirects=True)
-        html = resp.get_data(as_text=True)
-
         u1 = User.query.get(self.u1_id)
         u2 = User.query.get(self.u2_id)
 
-        self.assertEqual(len(u1.following), 1)
-        self.assertIn(u2.username, html)
+        self.assertEqual(u1.is_following(u2), False)
+        u1.following.append(u2)
 
         # CONDITION 2
-
-        resp = self.client.post(f'/users/stop-following/{self.u2_id}')
-        html = resp.get_data(as_text=True)
-
-        u1 = User.query.get(self.u1_id)
-        u2 = User.query.get(self.u2_id)
-
-        self.assertEqual(len(u1.following), 0)
-        self.assertNotIn(u2.username, html)
-
-
+        self.assertEqual(u1.is_following(u2), True)
 
 
     def test_is_followed_by(self):
-        """CONDITION 1: Test user1 is followed by user2.
-        check user1.followers includes user2
-
-        CONDITION 2: Test user1 is not followed by user2.
+        """CONDITION 1: Test user1 is not followed by user2.
         check user1.followers does not include user2
+
+        CONDITION 2: Test user1 is followed by user2.
+        check user1.followers includes user2
         """
-
-        #CONDITION 1
-
-        with self.client.session_transaction() as sess:
-            sess['curr_user'] = self.u2_id
-
-        resp = self.client.post(f'/users/follow/{self.u1_id}', follow_redirects=True)
-        html = resp.get_data(as_text=True)
+        # CONDITION 1
 
         u1 = User.query.get(self.u1_id)
         u2 = User.query.get(self.u2_id)
 
-        self.assertEqual(len(u1.followers), 1)
-        self.assertIn(u1.username, html)
+        self.assertEqual(u1.is_followed_by(u2), False)
 
         # CONDITION 2
 
-        resp = self.client.post(f'/users/stop-following/{self.u1_id}')
-        html = resp.get_data(as_text=True)
-
-        u1 = User.query.get(self.u1_id)
-        u2 = User.query.get(self.u2_id)
-
-        self.assertEqual(len(u1.followers), 0)
-        self.assertNotIn(u1.username, html)
-
+        u1.followers.append(u2)
+        self.assertEqual(u1.is_followed_by(u2), True)
 

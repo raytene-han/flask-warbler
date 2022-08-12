@@ -35,6 +35,7 @@ app.config['WTF_CSRF_ENABLED'] = False
 
 
 class MessageBaseViewTestCase(TestCase):
+    """Set up user and message for testing."""
     def setUp(self):
         User.query.delete()
 
@@ -52,9 +53,12 @@ class MessageBaseViewTestCase(TestCase):
 
 
 class MessageAddViewTestCase(MessageBaseViewTestCase):
+    """Test that a user can add a message when logged in and when logged out."""
     def test_add_message(self):
         # Since we need to change the session to mimic logging in,
         # we need to use the changing-session trick:
+
+        # CONDITION 1: logged in user
         with self.client as c:
             with c.session_transaction() as sess:
                 sess[CURR_USER_KEY] = self.u1_id
@@ -62,7 +66,50 @@ class MessageAddViewTestCase(MessageBaseViewTestCase):
             # Now, that session setting is saved, so we can have
             # the rest of ours test
             resp = c.post("/messages/new", data={"text": "Hello"})
+            message = Message.query.filter_by(text="Hello").one()
 
             self.assertEqual(resp.status_code, 302)
+            self.assertEqual(len(message.text), 5)
 
-            Message.query.filter_by(text="Hello").one()
+            # CONDITION 2: logged out user
+            c.post('/logout')
+            resp = c.post("/messages/new", data={"text": "Hello"},
+                          follow_redirects=True)
+
+            html = resp.get_data(as_text=True)
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn("Access unauthorized", html)
+
+
+
+
+class MessageDeleteViewTestCase(MessageBaseViewTestCase):
+    """Test that a user can delete a message"""
+    def test_delete_message(self):
+        # Since we need to change the session to mimic logging in,
+        # we need to use the changing-session trick:
+        # CONDITION 1: logged in user
+        with self.client as c:
+            with c.session_transaction() as sess:
+                sess[CURR_USER_KEY] = self.u1_id
+
+            # Now, that session setting is saved, so we can have
+            # the rest of ours test
+
+            resp = c.post("/messages/new", data={"text": "Hello friend"})
+            message = Message.query.filter_by(text="Hello friend").one()
+
+            resp = c.post(f"/messages/{message.id}/delete")
+            message = Message.query.all()
+
+            self.assertEqual(resp.status_code, 302)
+            self.assertEqual(len(message), 1)
+
+            # CONDITION 2: logged out user
+            c.post('/logout')
+            resp = c.post(f"/messages/{self.m1_id}/delete",
+                          follow_redirects=True)
+
+            html = resp.get_data(as_text=True)
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn("Access unauthorized", html)
